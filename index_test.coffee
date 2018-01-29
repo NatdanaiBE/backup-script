@@ -1,4 +1,3 @@
-backupList = require './backup_list'
 { backup, restore } = require './index'
 { expect } = require 'chai'
 _ = require 'lodash'
@@ -10,6 +9,7 @@ exec = util.promisify require('child_process').exec
 
 HOME = '/home/tiramizu/'
 HOST = '192.168.56.78'
+backupList = require('./backup_list') HOME, HOST
 
 sshRemoveAll = () ->
   _.each backupList, (e) ->
@@ -19,25 +19,27 @@ sshRemoveAll = () ->
       throw stderr
 
 describe "BACKUP AND RESTORE File", ->
-  before ->
-    console.log 'AWAKENING!'
-    await fsExtra.remove 'tmp'
-    fsExtra.mkdirs 'tmp'
-    sshRemoveAll()
+  # before ->
+  #   console.log 'AWAKENING!'
+  #   await fsExtra.remove HOST
+  #   fsExtra.mkdirs HOST
+    
+  # after ->
+  #   sshRemoveAll()
 
-  it 'should Backup', ->
-    await backup backupList, '127.0.0.1'
+  # it 'should Backup', ->
+  #   await backup backupList, HOST
 
-    exists = await Promise.map backupList, (e) ->
-      fsExtra.pathExists path.join __dirname, e.dest
-    existTrueLength = (_.filter exists, (e) -> _.isBoolean(e) and e).length
-    expect(existTrueLength).to.eq backupList.length
+  #   exists = await Promise.map backupList, (e) ->
+  #     fsExtra.pathExists path.join __dirname, e.dest
+  #   existTrueLength = (_.filter exists, (e) -> _.isBoolean(e) and e).length
+  #   expect(existTrueLength).to.eq backupList.length
 
   it 'should Restore', (done) ->
     this.timeout 4000
     wrapper = ->
       await restore backupList, HOST
-      
+
       exists = await Promise.map backupList, (e) ->
         innerCommand = "[ -e #{e.src} ] && echo 1 || echo 0"
         command = "ssh -oStrictHostKeyChecking=no root@#{HOST} '#{innerCommand}'"
