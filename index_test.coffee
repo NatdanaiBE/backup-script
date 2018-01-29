@@ -42,8 +42,22 @@ describe "Copy File", ->
 
     exists = await Promise.map backupList, (e) ->
       fsExtra.pathExists path.join __dirname, e.dest
-    # console.log exists
     existTrueLength = (_.filter exists, (e) -> _.isBoolean(e) and e).length
     expect(existTrueLength).to.eq backupList.length
-  it 'should restore', ->
-    await restore backupList, host
+
+  it 'should restore', (done) ->
+    this.timeout 4000
+    wrapper = ->
+      await restore backupList, host
+      exists = await Promise.map backupList, (e) ->
+        innerCommand = "[ -e #{e.src} ] && echo 1 || echo 0"
+        command = "ssh -oStrictHostKeyChecking=no root@#{host} '#{innerCommand}'"
+        { stdout, stderr } = await exec command
+        if stderr != ''
+          throw stderr
+        stdout
+
+      existTrueLength = (_.filter exists, (e) -> _.isString(e) and _.includes e, '1').length
+      expect(existTrueLength).to.eq backupList.length
+      done()
+    console.log wrapper()
