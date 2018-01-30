@@ -19,36 +19,39 @@ sshRemoveAll = () ->
       throw stderr
 
 describe "BACKUP AND RESTORE File", ->
-  # before ->
-  #   console.log 'AWAKENING!'
-  #   await fsExtra.remove HOST
-  #   fsExtra.mkdirs HOST
+  before ->
+    console.log 'AWAKENING!'
+    await fsExtra.remove HOST
+    fsExtra.mkdirs HOST
     
-  # after ->
-  #   sshRemoveAll()
+  after ->
+    # sshRemoveAll()
 
-  # it 'should Backup', ->
-  #   await backup backupList, HOST
-
-  #   exists = await Promise.map backupList, (e) ->
-  #     fsExtra.pathExists path.join __dirname, e.dest
-  #   existTrueLength = (_.filter exists, (e) -> _.isBoolean(e) and e).length
-  #   expect(existTrueLength).to.eq backupList.length
-
-  it 'should Restore', (done) ->
-    this.timeout 4000
+  it 'should Backup', ->
+    this.timeout 8000
     wrapper = ->
-      await restore backupList, HOST
+      await backup backupList, HOST
 
       exists = await Promise.map backupList, (e) ->
-        innerCommand = "[ -e #{e.src} ] && echo 1 || echo 0"
-        command = "ssh -oStrictHostKeyChecking=no root@#{HOST} '#{innerCommand}'"
-        { stdout, stderr } = await exec command
-        if stderr != ''
-          throw stderr
-        stdout
-
-      existTrueLength = (_.filter exists, (e) -> _.isString(e) and _.includes e, '1').length
+        fsExtra.pathExists path.join __dirname, e.dest
+      existTrueLength = (_.filter exists, (e) -> _.isBoolean(e) and e).length
       expect(existTrueLength).to.eq backupList.length
-      done()
     console.log wrapper()
+
+  # it 'should Restore', (done) ->
+  #   this.timeout 8000
+  #   wrapper = ->
+  #     await restore backupList, HOST
+
+  #     exists = await Promise.map backupList, (e) ->
+  #       innerCommand = "[ -e #{e.src} ] && echo 1 || echo 0"
+  #       command = "ssh -oStrictHostKeyChecking=no root@#{HOST} '#{innerCommand}'"
+  #       { stdout, stderr } = await exec command
+  #       if stderr != ''
+  #         throw stderr
+  #       stdout
+
+  #     existTrueLength = (_.filter exists, (e) -> _.isString(e) and _.includes e, '1').length
+  #     expect(existTrueLength).to.eq backupList.length
+  #     done()
+  #   console.log wrapper()
