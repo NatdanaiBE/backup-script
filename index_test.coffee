@@ -1,4 +1,4 @@
-{ backup, restore } = require './index'
+{ backup, tarCreate, restore } = require './index'
 { expect } = require 'chai'
 _ = require 'lodash'
 fsExtra = require 'fs-extra'
@@ -7,8 +7,8 @@ Promise = require 'bluebird'
 util = require 'util'
 exec = util.promisify require('child_process').exec
 
-HOME = '/home/tiramizu/'
-HOST = '192.168.56.78'
+HOME = '/root/'
+HOST = '192.168.56.11'
 backupList = require('./backup_list') HOME, HOST
 
 sshRemoveAll = () ->
@@ -28,15 +28,20 @@ describe "BACKUP AND RESTORE File", ->
     # sshRemoveAll()
 
   it 'should Backup', ->
-    this.timeout 8000
-    wrapper = ->
-      await backup backupList, HOST
+    this.timeout 0
+    sourceExists = await backup backupList, HOST
 
-      exists = await Promise.map backupList, (e) ->
-        fsExtra.pathExists path.join __dirname, e.dest
-      existTrueLength = (_.filter exists, (e) -> _.isBoolean(e) and e).length
-      expect(existTrueLength).to.eq backupList.length
-    console.log wrapper()
+    backupExists = await Promise.map backupList, (e) ->
+      fsExtra.pathExists path.join __dirname, e.dest
+    expect(backupExists).to.deep.eq sourceExists
+
+    await tarCreate HOST
+    tarExist = await fsExtra.pathExists path.join __dirname, "#{HOST}.tgz"
+    expect(tarExist).to.be.true
+
+    await fsExtra.remove "#{HOST}"
+    folderExist = await fsExtra.pathExists path.join __dirname, "#{HOST}"
+    expect(tarExist).to.be.false
 
   # it 'should Restore', (done) ->
   #   this.timeout 8000
