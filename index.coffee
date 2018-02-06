@@ -5,6 +5,7 @@ _ = require 'lodash'
 util = require 'util'
 exec = util.promisify require('child_process').exec
 tar = require 'tar'
+fs = require 'fs'
 
 module.exports =
   backup: (backupList, host) ->
@@ -14,8 +15,6 @@ module.exports =
       try
         { stdout, stderr } = await exec command
       catch e
-      # if stderr != ''
-      #   throw stderr
       stderr == ''
 
   tarCreate: (host) ->
@@ -24,21 +23,11 @@ module.exports =
     , ["#{host}"]
 
   restore: (backupList, host) ->
-    Promise.map backupList, (element) ->
-      prePath = element.src.substring 0, element.src.lastIndexOf '/'
-      preCommand = "ssh -oStrictHostKeyChecking=no root@#{host} 'mkdir -p #{prePath}'"
-      { stdout, stderr } = await exec preCommand
-      if stderr != ''
-        throw stderr
+    jsonString =  JSON.stringify backupList
+    fs.writeFile 'fileList.json', jsonString, () ->
+    fileList = "#{host}.tgz restore.coffee fileList.json"
+    command = "scp -r -oStrictHostKeyChecking=no #{fileList} root@#{host}:/tmp"
+    exec command, () ->
+      command = "ssh -oStrictHostKeyChecking=no root@#{host} 'coffee /tmp/restore.coffee'"
+      exec command, () -> ##rm
 
-      command = "scp -r -oStrictHostKeyChecking=no #{element.dest} root@#{host}:#{element.src}"
-      { stdout, stderr } = await exec command
-      if stderr != ''
-        throw stderr
-mergeFile = (sourceFile, destFile) ->
-  destLines = destFile.split '\n'
-  sourceLines = sourceFile.split '\n'
-  _.each destLines, (v) ->
-    if v.startsWith 'alias' and not sourceLines.includes v
-      sourceFile += v
-  sourceFile
