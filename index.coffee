@@ -27,7 +27,13 @@ module.exports =
     fs.writeFile 'fileList.json', jsonString, () ->
     fileList = "#{host}.tgz restore.coffee fileList.json"
     command = "scp -r -oStrictHostKeyChecking=no #{fileList} root@#{host}:/tmp"
-    exec command, () ->
+    exec command, (err, out) ->
+      console.log err if err
       command = "ssh -oStrictHostKeyChecking=no root@#{host} 'coffee /tmp/restore.coffee'"
-      exec command, () -> ##rm
+      exec command, (err, out) ->
+        console.log err if err
+        console.log out if out
+        command = "ssh -oStrictHostKeyChecking=no root@#{host} 'cd /tmp && rm #{fileList}'"
+        exec command, (err, out) -> ##rm
+          console.log err if err
 

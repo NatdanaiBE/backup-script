@@ -11,11 +11,12 @@ moveAndExtract = () ->
   jsonData = JSON.parse jsonString.toString()
   hostName = path.dirname jsonData[0].dest
   await tar.extract
-    file: "#{hostName}.tgz"
+    file: path.join(__dirname, "#{hostName}.tgz")
+    C: __dirname
   , ["#{hostName}"]
-  
+
   async.each jsonData, (elem, callback) ->
-    fileName = path.basename elem.dest
+    fileName = path.basename elem.dest  
     if await fsExtra.pathExists path.join __dirname, hostName, fileName
       console.log fileName + ' exist'
       if fileName == '.bashrc'
