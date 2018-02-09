@@ -6,6 +6,7 @@ path = require 'path'
 Promise = require 'bluebird'
 util = require 'util'
 exec = util.promisify require('child_process').exec
+moment = require 'moment'
 
 HOME = '/root/'
 HOST = '192.168.56.22'
@@ -45,15 +46,25 @@ describe "BACKUP AND RESTORE File", ->
 
   it 'should Restore', ->
     this.timeout 0
-    await restore backupList, HOST
+    restore backupList, HOST, (existList) ->
+      console.log existList
+      console.log 'asdf'
 
-    # exists = await Promise.map backupList, (e) ->
-    #   innerCommand = "[ -e #{e.src} ] && echo 1 || echo 0"
-    #   command = "ssh -oStrictHostKeyChecking=no root@#{HOST} '#{innerCommand}'"
-    #   { stdout, stderr } = await exec command
-    #   if stderr != ''
-    #     throw stderr
-    #   stdout
+      exists = await Promise.map backupList, (e) ->
+        innerCommand = "stat #{e.src}"
+        command = "ssh -oStrictHostKeyChecking=no root@#{HOST} '#{innerCommand}'"
+        try
+          { stdout, stderr } = await exec command
+        catch e 
+        if stdout
+          dateString = stdout.split('\n')[6].split(' ')[1]
+          moment(dateString).format('YY-MM-DD') == moment().format('YY-MM-DD')
+        else
+          false
+        
+      
+      console.log exists
+      console.log 'ghjk'
 
-    # existTrueLength = (_.filter exists, (e) -> _.isString(e) and _.includes e, '1').length
-    # expect(existTrueLength).to.eq backupList.length
+      # existTrueLength = (_.filter exists, (e) -> _.isString(e) and _.includes e, '1').length
+      # expect(existTrueLength).to.eq backupList.length

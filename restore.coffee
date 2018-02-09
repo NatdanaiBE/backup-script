@@ -17,8 +17,9 @@ moveAndExtract = () ->
 
   async.each jsonData, (elem, callback) ->
     fileName = path.basename elem.dest  
-    if await fsExtra.pathExists path.join __dirname, hostName, fileName
-      console.log fileName + ' exist'
+    exist = await fsExtra.pathExists path.join __dirname, hostName, fileName
+    console.log exist
+    if exist
       if fileName == '.bashrc'
         sourceFile = await fs.readFileAsync(elem.src)
         destFile = await fs.readFileAsync(path.join(__dirname, hostName, '.bashrc'))
@@ -26,7 +27,10 @@ moveAndExtract = () ->
         # console.log newFile
         fs.writeFile elem.src, newFile
       else
+        await fsExtra.remove elem.src
         await fsExtra.copy path.join(__dirname, hostName, fileName), elem.src
+    # console.log elem.src
+    # console.log await fsExtra.pathExists elem.src
     callback()
   , () -> fsExtra.remove path.join __dirname, hostName
 
@@ -52,5 +56,5 @@ mergeFile = (sourceFile, destFile) ->
   sourceLines = _.filter sourceLines, (e) -> e
   
   _.reduce sourceLines, (result, value, index) ->
-    result += value + '\n'
+    result += '\n' + value
     result
